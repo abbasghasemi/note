@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/round_search_24"
+        android:title="@string/search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="always|collapseActionView" />
+
+    <item
+        android:icon="@drawable/round_sort_24"
+        android:title="@string/sort"
+        app:showAsAction="ifRoom">
+        <menu>
+            <group>
+                <item
+                    android:id="@+id/action_pin_favorites"
+                    android:checkable="true"
+                    android:checked="true"
+                    android:title="@string/pin_favorites"
+                    app:showAsAction="never" />
+            </group>
+            <group android:checkableBehavior="single"
+                android:id="@+id/sort_menu">
+                <item
+
+                    android:id="@+id/action_sort_by_title"
+                    android:title="@string/title" />
+                <item
+                    android:id="@+id/action_sort_by_date_created"
+                    android:title="@string/date_created" />
+                <item
+                    android:id="@+id/action_sort_by_date_modified"
+                    android:title="@string/date_modified" />
+            </group>
+        </menu>
+    </item>
+
+    <!--    <item-->
+    <!--        android:id="@+id/action_show_archived"-->
+    <!--        android:checkable="true"-->
+    <!--        android:title="@string/show_archived"-->
+    <!--        app:showAsAction="never" />-->
+    <item
+        android:id="@+id/action_delete_all_notes"
+        android:title="@string/delete_all_notes"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_settings"
+        android:title="@string/settings"
+        app:showAsAction="never" />
+
+</menu>

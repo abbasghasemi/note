@@ -1,0 +1,14 @@
+<resources>
+    <style name="Theme.Notes" parent="Theme.Material3.DayNight">
+        <item name="android:statusBarColor">@color/statusBarColor</item>
+        <item name="android:windowLightStatusBar">@bool/windowLightStatusBar</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/colorOnPrimaryContainer</item>
+        <item name="colorSecondary">@color/colorPrimary</item>
+        <item name="background">@color/background</item>
+        <item name="colorSurface">@color/background</item>
+        <item name="colorOnSurface">@color/colorOnSurface</item>
+        <item name="fontFamily">@font/sans</item>
+    </style>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menu_delete"
+        android:icon="@drawable/round_delete_24"
+        android:title="@string/delete"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/menu_update"
+        android:icon="@drawable/round_check_24"
+        android:title="@string/save"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/menu_favorite"
+        android:icon="@drawable/selector_favorite"
+        android:title="@string/add_to_favorites"
+        app:showAsAction="never" />
+</menu>

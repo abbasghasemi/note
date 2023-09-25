@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#64B5F6</color>
+    <color name="colorPrimaryContainer">#64B5F6</color>
+    <color name="colorOnPrimaryContainer">#FFFFFF</color>
+    <color name="colorOnSurface">#FFFFFF</color>
+    <color name="background">#212121</color>
+    <color name="colorDivider">#3A3A3A</color>
+    <color name="statusBarColor">#191919</color>
+    <color name="colorIcon">#CDCDCD</color>
+    <bool name="windowLightStatusBar">false</bool>
+
+    <color name="grey">@android:color/darker_gray</color>
+    <color name="dark_grey">#2E2D2D</color>
+    <color name="golden">#FFD54F</color>
+</resources>

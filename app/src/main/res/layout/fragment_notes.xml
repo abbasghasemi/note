@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinator"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.notes.NotesFragment">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/animation_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            app:lottie_autoPlay="false"
+            app:lottie_loop="false"
+            app:lottie_rawRes="@raw/ic_no_data" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_notes"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="@dimen/margin_4"
+            android:clipToPadding="false"
+            android:paddingBottom="76dp"
+            tools:listitem="@layout/item_notes" />
+
+        <TextView
+            android:id="@+id/tv_no_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_32"
+            android:gravity="center"
+            android:text="@string/no_notes"
+            android:textSize="18sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fab_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/margin_14"
+            android:clickable="true"
+            android:contentDescription="@string/add_new_note"
+            android:focusable="true"
+            android:nav_to_add="@{true}"
+            android:text="@string/add_new_note"
+            app:icon="@drawable/round_edit_24"
+            app:layout_anchor="@id/rv_notes"
+            app:layout_anchorGravity="bottom|start" />
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

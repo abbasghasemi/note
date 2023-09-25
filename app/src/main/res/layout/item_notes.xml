@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="Note"
+            type="ghasemi.abbas.note.data.Note" />
+    </data>
+
+    <androidx.cardview.widget.CardView
+        app:cardBackgroundColor="@{Note.bgColor}"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/margin_4"
+        android:elevation="2dp"
+        app:cardCornerRadius="8dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:send_notes_to_edit="@{Note}">
+
+            <TextView
+                android:id="@+id/tv_title"
+                style="@style/TitleStyle"
+                android:text="@{Note.title}"
+                app:layout_constraintEnd_toStartOf="@+id/iv_favorite"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="@string/title" />
+
+            <ImageView
+                android:id="@+id/iv_favorite"
+                style="@style/FavoriteStyle"
+                android:layout_marginEnd="5dp"
+                android:is_favorite="@{Note.favorite}"
+                android:src="@drawable/selector_favorite"
+                tools:src="@drawable/round_star_24"
+                app:layout_constraintBottom_toBottomOf="@+id/tv_title"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/tv_title"
+                android:contentDescription="@string/favorite_notes" />
+
+            <TextView
+                android:id="@+id/tv_notes"
+                style="@style/NoteStyle"
+                android:text="@{Note.content}"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_title"
+                tools:text="@tools:sample/lorem/random" />
+
+            <TextView
+                android:id="@+id/tv_date"
+                style="@style/DateTimeStyle"
+                android:text="@{Note.lastUpdatedAtFormatted}"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_notes"
+                tools:text="Date" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+</layout>

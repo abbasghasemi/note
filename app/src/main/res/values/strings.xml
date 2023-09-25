@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">یادداشت</string>
+    <string name="add_new_note">یادداشت جدید</string>
+    <string name="favorite_notes">ستاره دار</string>
+    <string name="title">عنوان</string>
+    <string name="note">یادداشت</string>
+    <string name="search">جستجو</string>
+    <string name="sort">مرتب سازی بر اساس</string>
+    <string name="date_created">تاریخ ایجاد</string>
+    <string name="date_modified">آخرین ویرایش</string>
+    <string name="delete_all_notes">حذف تمامی یادداشت ها</string>
+    <string name="pin_favorites">پین شدن ستاره دار ها</string>
+    <string name="show_archived">نمایش بایگانی ها</string>
+    <string name="add_to_favorites">اضافه کردن به ستاره دار ها</string>
+    <string name="remove_from_favorites">حذف کردن از ستاره دار ها</string>
+    <string name="save">ذخیره</string>
+    <string name="delete">حذف</string>
+    <string name="settings">تنطیمات</string>
+    <string name="no_notes">هیچ یادداشتی با جستجویتان مطابقت ندارد</string>
+    <string name="speech_to_text_button">الان صحبت کن!</string>
+
+    <string-array name="sortBy">
+        <item>عنوان</item>
+        <item>@string/date_created</item>
+        <item>@string/date_modified</item>
+    </string-array>
+
+    <string-array name="hex_colors">
+        <item>#FFFFFF</item>
+<!--        <item>#212121</item>-->
+<!--        <item>#313131</item>-->
+<!--        <item>#1A1D2B</item>-->
+        <item>#E3E3FF</item>
+        <item>#DFF2FD</item>
+        <item>#E2FCE6</item>
+        <item>#FCFADE</item>
+        <item>#FFEEE2</item>
+        <item>#FFDBDB</item>
+    </string-array>
+
+</resources>
