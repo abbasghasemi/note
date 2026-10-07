@@ -21,7 +21,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:send_notes_to_edit="@{Note}">
+            >
 
             <TextView
                 android:id="@+id/tv_title"
@@ -36,13 +36,25 @@
                 android:id="@+id/iv_favorite"
                 style="@style/FavoriteStyle"
                 android:layout_marginEnd="5dp"
-                android:is_favorite="@{Note.favorite}"
                 android:src="@drawable/selector_favorite"
                 tools:src="@drawable/round_star_24"
                 app:layout_constraintBottom_toBottomOf="@+id/tv_title"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/tv_title"
                 android:contentDescription="@string/favorite_notes" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/selection_checkbox"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="3dp"
+                android:gravity="center"
+                android:contentDescription="@string/select_note"
+                android:visibility="gone"
+                app:buttonTint="@color/colorPrimary"
+                app:layout_constraintBottom_toBottomOf="@id/tv_title"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tv_title" />
 
             <TextView
                 android:id="@+id/tv_notes"

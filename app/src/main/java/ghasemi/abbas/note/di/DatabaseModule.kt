@@ -11,12 +11,6 @@ import ghasemi.abbas.note.data.NoteDao
 import ghasemi.abbas.note.data.NoteDatabase
 import javax.inject.Singleton
 
-class DatabaseController {
-    companion object {
-        var database: NoteDatabase? = null
-    }
-}
-
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -24,12 +18,11 @@ object DatabaseModule {
     @Singleton
     @Provides
     fun provideDatabase(@ApplicationContext applicationContext: Context): NoteDatabase {
-        DatabaseController.database = Room.databaseBuilder(
+        return Room.databaseBuilder(
                 applicationContext,
                 NoteDatabase::class.java,
                 "data"
-        ).fallbackToDestructiveMigration().build()
-        return DatabaseController.database!!
+        ).build()
     }
 
     @Provides

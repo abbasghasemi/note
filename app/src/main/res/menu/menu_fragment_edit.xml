@@ -17,4 +17,8 @@
         android:icon="@drawable/selector_favorite"
         android:title="@string/add_to_favorites"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_share"
+        android:title="@string/share_note"
+        app:showAsAction="never" />
 </menu>

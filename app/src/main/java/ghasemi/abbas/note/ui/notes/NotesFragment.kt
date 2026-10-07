@@ -1,15 +1,15 @@
 package ghasemi.abbas.note.ui.notes
 
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
-import androidx.appcompat.widget.SearchView
-import androidx.core.view.isVisible
+import androidx.activity.OnBackPressedCallback
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,24 +22,22 @@ import ghasemi.abbas.note.adapters.NotesAdapter
 import ghasemi.abbas.note.data.Note
 import ghasemi.abbas.note.data.PrefsManager
 import ghasemi.abbas.note.databinding.FragmentNotesBinding
-import ghasemi.abbas.note.di.DatabaseController
 import ghasemi.abbas.note.ui.SharedViewModel
-import ghasemi.abbas.note.utils.SortBy
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class NotesFragment : Fragment(R.layout.fragment_notes), NotesAdapter.OnItemClickListener {
-
-    private val TAG = NotesFragment::class.java.simpleName
     private val viewModel: NotesViewModel by viewModels()
     private val sharedViewModel: SharedViewModel by viewModels()
     private var _binding: FragmentNotesBinding? = null
-    private val binding
-        get() = _binding
+    private val binding get() = requireNotNull(_binding)
     private val notesAdapter = NotesAdapter(this)
+    private val selectedIds = mutableSetOf<Long>()
+    private var notesSource: LiveData<List<Note>>? = null
+    private var showArchived = false
+    private lateinit var selectionBackCallback: OnBackPressedCallback
 
-    @Inject
-    lateinit var prefs: PrefsManager
+    @Inject lateinit var prefs: PrefsManager
 
     companion object {
         val snackBar = MutableLiveData("")
@@ -47,181 +45,135 @@ class NotesFragment : Fragment(R.layout.fragment_notes), NotesAdapter.OnItemClic
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        //TODO
-        if (DatabaseController.database != null && !DatabaseController.database!!.isOpen) {
-            viewModel.openDatabase(requireContext())
-        }
         _binding = FragmentNotesBinding.bind(view)
 
-        binding?.apply {
-            rvNotes.apply {
-                adapter = notesAdapter
-                layoutStyle()
-                setHasFixedSize(true)
-            }
+        binding.rvNotes.adapter = notesAdapter
+        binding.fabAdd.setOnClickListener {
+            findNavController().navigate(R.id.action_notesFragment_to_addFragment)
         }
-
-        viewModel.allNotes.observe(viewLifecycleOwner) {
-            if (!it.isNullOrEmpty()) {
-                notesAdapter.setData(it)
-            } else binding!!.apply {
-                tvNoNote.visibility = View.GONE
-                animationView.isVisible = true
-                animationView.playAnimation()
-            }
+        binding.rvNotes.setHasFixedSize(true)
+        binding.rvNotes.itemAnimator = null
+        applyLayoutStyle()
+        binding.searchNotes.doAfterTextChanged {
+            clearSelection()
+            observeNotes()
         }
-        Log.d(TAG, "onViewCreated:${prefs.getViewStyle()}")
+        binding.archiveFilter.setOnClickListener {
+            showArchived = !showArchived
+            binding.archiveFilter.setText(if (showArchived) R.string.show_notes else R.string.archive)
+            binding.archiveSelected.setText(if (showArchived) R.string.restore_from_archive else R.string.archive)
+            clearSelection()
+            observeNotes()
+        }
+        binding.selectAll.setOnClickListener {
+            selectedIds.addAll(notesAdapter.NoteList.map(Note::id))
+            updateSelection()
+        }
+        binding.cancelSelection.setOnClickListener { clearSelection() }
+        binding.deleteSelected.setOnClickListener { confirmDeleteSelected() }
+        binding.archiveSelected.setOnClickListener { archiveSelected() }
 
-        snackBar.observe(viewLifecycleOwner) {
-            if (it.isNotEmpty()) {
-                showSnackBar(it)
+        selectionBackCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() = clearSelection()
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, selectionBackCallback)
+
+        snackBar.observe(viewLifecycleOwner) { message ->
+            if (message.isNotEmpty()) {
+                Snackbar.make(binding.coordinator, message, Snackbar.LENGTH_LONG).show()
                 snackBar.value = ""
             }
         }
         setHasOptionsMenu(true)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.menu_fragment_notes, menu)
-
-        val searchItem = menu.findItem(R.id.action_search)
-        val searchView = searchItem.actionView as SearchView
-
-        val pinFavoriteMenu = menu.findItem(R.id.action_pin_favorites)
-        pinFavoriteMenu.isChecked = prefs.favoritePinnedStatus()
-
-        when (prefs.sortBy()) {
-            SortBy.TITLE.colName -> updateMenu(menu.findItem(R.id.action_sort_by_title))
-            SortBy.CREATED_AT.colName -> updateMenu(menu.findItem(R.id.action_sort_by_date_created))
-            SortBy.LAST_UPDATED_AT.colName -> updateMenu(menu.findItem(R.id.action_sort_by_date_modified))
-        }
-
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return true
-            }
-
-            override fun onQueryTextChange(searchQuery: String): Boolean {
-                //viewModel.searchQuery = searchQuery
-                searchNote(searchQuery)
-                return true
-            }
-        })
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-
-        return when (item.itemId) {
-            R.id.action_pin_favorites -> {
-                prefs.favoritePinned(!prefs.favoritePinnedStatus())
-                viewModel.allNotes.observe(this) { notesAdapter.setData(it) }
-                item.isChecked = prefs.favoritePinnedStatus()
-                true
-            }
-
-            R.id.action_sort_by_title -> {
-                prefs.setSortBy(SortBy.TITLE.colName)
-                updateMenu(item)
-                true
-            }
-
-            R.id.action_sort_by_date_created -> {
-                prefs.setSortBy(SortBy.CREATED_AT.colName)
-                updateMenu(item)
-                true
-            }
-
-            R.id.action_sort_by_date_modified -> {
-                prefs.setSortBy(SortBy.LAST_UPDATED_AT.colName)
-                updateMenu(item)
-                true
-            }
-
-            R.id.action_settings -> {
-                findNavController().navigate(R.id.action_notesFragment_to_settingsFragment)
-                true
-            }
-
-            R.id.action_delete_all_notes -> {
-                deleteAllDialog()
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    private fun updateMenu(item: MenuItem) {
-        viewModel.allNotes.observe(this) {
-            notesAdapter.setData(it)
-            binding!!.tvNoNote.visibility = View.GONE
-        }
-        item.isChecked = true
-    }
-
-    private fun deleteAllDialog() {
-
-        if (notesAdapter.NoteList.isNotEmpty()) {
-            val builder = MaterialAlertDialogBuilder(requireContext())
-            builder.setPositiveButton("بله") { _, _ ->
-
-                val notes: List<Note> = notesAdapter.NoteList
-                viewModel.deleteAllNotes()
-
-                showSnackBar(
-                    "همه یادداشت ها حذف شد.",
-                    "بازگشت"
-                ) {
-                    for (note in notes) {
-                        sharedViewModel.insertNote(note)
-                        binding!!.animationView.isVisible = false
-                    }
-                }
-            }
-            builder.setNegativeButton("خیر") { _, _ -> }
-            builder.setTitle("حذف یادداشت ها")
-            builder.setMessage("آیا می خواهید همه چیز را حذف کنید؟")
-            builder.create().show()
-        } else {
-            showSnackBar("یادداشتی برای حذف وجود ندارد.")
-        }
-    }
-
-    private fun searchNote(query: String) {
-        val searchQuery = "%${query}%"
-        viewModel.searchNote(searchQuery).observe(this) { list ->
-            list?.let {
-                if (it.isEmpty()) {
-                    binding!!.rvNotes.visibility = View.GONE
-                    binding!!.tvNoNote.visibility = View.VISIBLE
-                } else {
-                    binding!!.tvNoNote.visibility = View.GONE
-                    binding!!.rvNotes.visibility = View.VISIBLE
-                    notesAdapter.setData(it)
-                }
-            }
-        }
-    }
-
-    override fun onDestroyView() {
-        viewModel.allNotes.removeObservers(viewLifecycleOwner)
-        snackBar.removeObservers(viewLifecycleOwner)
-        super.onDestroyView()
-        _binding = null
+        observeNotes()
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.allNotes.observe(viewLifecycleOwner) { notesAdapter.setData(it) }
+        if (_binding != null) {
+            applyLayoutStyle()
+            observeNotes()
+        }
     }
 
-    private fun layoutStyle() {
-        if (prefs.getViewStyle().equals("list")) {
-            binding!!.rvNotes.layoutManager =
-                LinearLayoutManager(context)
-        } else {
-            binding!!.rvNotes.layoutManager =
-                StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+    private fun observeNotes() {
+        if (_binding == null) return
+        notesSource?.removeObservers(viewLifecycleOwner)
+        val query = binding.searchNotes.text?.toString()?.trim().orEmpty()
+        notesSource = if (query.isEmpty()) viewModel.notes(showArchived)
+            else viewModel.searchNote(query, showArchived)
+        notesSource?.observe(viewLifecycleOwner) { notes ->
+            val items = notes.orEmpty()
+            notesAdapter.setData(items)
+            selectedIds.retainAll(items.map(Note::id).toSet())
+            updateSelection()
+            binding.animationView.visibility = if (items.isEmpty() && query.isEmpty()) View.VISIBLE else View.GONE
+            binding.tvNoNote.visibility = if (items.isEmpty() && query.isNotEmpty()) View.VISIBLE else View.GONE
+            if (items.isEmpty() && query.isEmpty()) binding.animationView.playAnimation()
+        }
+    }
+
+    private fun applyLayoutStyle() {
+        val grid = prefs.getViewStyle() == "grid"
+        val current = binding.rvNotes.layoutManager
+        if (grid && current !is StaggeredGridLayoutManager) {
+            binding.rvNotes.layoutManager = StaggeredGridLayoutManager(
+                2, StaggeredGridLayoutManager.VERTICAL
+            ).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE }
+        } else if (!grid && current !is LinearLayoutManager) {
+            binding.rvNotes.layoutManager = LinearLayoutManager(requireContext())
+        }
+    }
+
+    private fun updateSelection() {
+        if (_binding == null) return
+        notesAdapter.setSelection(selectedIds)
+        val selecting = selectedIds.isNotEmpty()
+        binding.selectionBar.visibility = if (selecting) View.VISIBLE else View.GONE
+        binding.fabAdd.visibility = if (selecting || showArchived) View.GONE else View.VISIBLE
+        val bottomPadding = ((if (selecting) 120 else 76) * resources.displayMetrics.density).toInt()
+        if (binding.rvNotes.paddingBottom != bottomPadding) {
+            binding.rvNotes.setPadding(binding.rvNotes.paddingLeft, binding.rvNotes.paddingTop,
+                binding.rvNotes.paddingRight, bottomPadding)
+        }
+        binding.selectedCount.text = getString(R.string.selected_count, selectedIds.size)
+        selectionBackCallback.isEnabled = selecting
+    }
+
+    private fun clearSelection() {
+        selectedIds.clear()
+        if (_binding != null) updateSelection()
+    }
+
+    private fun confirmDeleteSelected() {
+        val selected = notesAdapter.NoteList.filter { it.id in selectedIds }
+        if (selected.isEmpty()) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(getString(R.string.delete_selected_confirmation, selected.size))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete_selected) { _, _ ->
+                clearSelection()
+                viewModel.deleteByIds(selected.map(Note::id)) {
+                    val root = _binding?.coordinator ?: return@deleteByIds
+                    Snackbar.make(root, R.string.deleted_notes, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.undo) { viewModel.restoreNotes(selected) }
+                        .show()
+                }
+            }
+            .show()
+    }
+
+    private fun archiveSelected() {
+        val ids = selectedIds.toList()
+        if (ids.isEmpty()) return
+        val archived = !showArchived
+        clearSelection()
+        viewModel.setArchived(ids, archived) {
+            val root = _binding?.coordinator ?: return@setArchived
+            Snackbar.make(root, if (archived) R.string.notes_archived else R.string.notes_restored,
+                Snackbar.LENGTH_LONG)
+                .setAction(R.string.undo) { viewModel.setArchived(ids, !archived) {} }
+                .show()
         }
     }
 
@@ -229,23 +181,37 @@ class NotesFragment : Fragment(R.layout.fragment_notes), NotesAdapter.OnItemClic
         sharedViewModel.markAsFavorite(markedFavorite, id)
     }
 
-    private fun showSnackBar(
-        msg: String,
-        btnName: String? = null,
-        listener: View.OnClickListener? = null
-    ) {
-        val snackBar = Snackbar.make(
-            binding!!.coordinator, msg,
-            Snackbar.LENGTH_LONG
-        )
-        if (btnName != null) {
-            snackBar.setAction(btnName, listener)
+    override fun onNoteClicked(note: Note) {
+        if (selectedIds.isNotEmpty()) {
+            if (!selectedIds.add(note.id)) selectedIds.remove(note.id)
+            updateSelection()
+        } else {
+            findNavController().navigate(NotesFragmentDirections.actionNotesFragmentToEditFragment(note))
         }
-        snackBar.show()
     }
 
-    override fun onDestroy() {
-        viewModel.closeDatabase()
-        super.onDestroy()
+    override fun onNoteLongClicked(note: Note) {
+        if (!selectedIds.add(note.id)) selectedIds.remove(note.id)
+        updateSelection()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.menu_fragment_notes, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return if (item.itemId == R.id.action_settings) {
+            clearSelection()
+            findNavController().navigate(R.id.action_notesFragment_to_settingsFragment)
+            true
+        } else super.onOptionsItemSelected(item)
+    }
+
+    override fun onDestroyView() {
+        notesSource?.removeObservers(viewLifecycleOwner)
+        notesSource = null
+        selectedIds.clear()
+        _binding = null
+        super.onDestroyView()
     }
 }

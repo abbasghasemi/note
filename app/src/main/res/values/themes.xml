@@ -9,6 +9,21 @@
         <item name="background">@color/background</item>
         <item name="colorSurface">@color/background</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
+        <item name="actionBarStyle">@style/NotesActionBar</item>
+        <item name="actionBarTheme">@style/NotesActionBarTheme</item>
         <item name="fontFamily">@font/sans</item>
+    </style>
+
+    <style name="NotesActionBar" parent="Widget.AppCompat.ActionBar.Solid">
+        <item name="background">@color/colorPrimaryContainer</item>
+        <item name="titleTextStyle">@style/NotesActionBarTitle</item>
+    </style>
+
+    <style name="NotesActionBarTitle" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/colorOnPrimaryContainer</item>
+    </style>
+
+    <style name="NotesActionBarTheme" parent="ThemeOverlay.AppCompat.ActionBar">
+        <item name="colorControlNormal">@color/colorOnPrimaryContainer</item>
     </style>
 </resources>

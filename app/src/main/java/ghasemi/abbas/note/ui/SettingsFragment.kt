@@ -1,34 +1,44 @@
 package ghasemi.abbas.note.ui
 
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.LinearLayout
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import ghasemi.abbas.note.BuildConfig
+import ghasemi.abbas.note.data.PrefsManager
 import ghasemi.abbas.note.databinding.FragmentSettingsBinding
 import ghasemi.abbas.note.ui.notes.NotesViewModel
+import ghasemi.abbas.note.utils.SortBy
 import ghasemi.abbas.note.utils.SETTINGS_PREF_KEY
 import ghasemi.abbas.note.utils.STYLE_MODE_KEY
 import ghasemi.abbas.note.utils.THEME_MODE_KEY
 import ghasemi.abbas.note.utils.ThemeUtil
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class SettingsFragment : Fragment() {
@@ -40,14 +50,16 @@ class SettingsFragment : Fragment() {
         ActivityResultContracts.CreateDocument("application/octet-stream"),
         object : ActivityResultCallback<Uri?> {
             override fun onActivityResult(result: Uri?) {
-                if (result == null) {
-                    Snackbar.make(binding!!.root, "خطا", Snackbar.LENGTH_SHORT).show()
-                    return
-                }
-                val out = requireContext().contentResolver.openOutputStream(result)
-                if (out == null || !backup(out)) {
-                    Snackbar.make(binding!!.root, "خطا", Snackbar.LENGTH_SHORT).show()
-                    return
+                if (result == null) return
+                lifecycleScope.launch {
+                    val context = requireContext().applicationContext
+                    val success = withContext(Dispatchers.IO) {
+                        try { context.contentResolver.openOutputStream(result)?.use { backup(it) } ?: false }
+                        catch (_: Exception) { false }
+                    }
+                    binding?.root?.let {
+                        Snackbar.make(it, if (success) "پشتیبان‌گیری انجام شد" else "خطا در پشتیبان‌گیری", Snackbar.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -56,18 +68,16 @@ class SettingsFragment : Fragment() {
         ActivityResultContracts.OpenDocument(),
         object : ActivityResultCallback<Uri?> {
             override fun onActivityResult(result: Uri?) {
-                if (result == null) {
-                    Snackbar.make(binding!!.root, "خطا", Snackbar.LENGTH_SHORT).show()
-                    return
-                }
-                try {
-                    val input = requireContext().contentResolver.openInputStream(result)
-                    if (input == null || !validFile(result) || !restore(input)) {
-                        Snackbar.make(binding!!.root, "خطا", Snackbar.LENGTH_SHORT).show()
-                        return
+                if (result == null) return
+                lifecycleScope.launch {
+                    val context = requireContext().applicationContext
+                    val success = withContext(Dispatchers.IO) {
+                        try { context.contentResolver.openInputStream(result)?.use { restore(it) } ?: false }
+                        catch (_: Exception) { false }
                     }
-                } catch (e: Exception) {
-                    Snackbar.make(binding!!.root, "خطا", Snackbar.LENGTH_SHORT).show()
+                    binding?.root?.let {
+                        Snackbar.make(it, if (success) "بازیابی انجام شد" else "فایل پشتیبان معتبر نیست", Snackbar.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -86,7 +96,29 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setHasOptionsMenu(true)
         sp = requireContext().getSharedPreferences(SETTINGS_PREF_KEY, Context.MODE_PRIVATE)
+        val prefs = PrefsManager(requireContext())
+        val sortValues = arrayOf(SortBy.LAST_UPDATED_AT, SortBy.CREATED_AT, SortBy.TITLE)
+        val sortLabels = arrayOf(getString(ghasemi.abbas.note.R.string.date_modified),
+            getString(ghasemi.abbas.note.R.string.date_created), getString(ghasemi.abbas.note.R.string.title))
+        fun updateSortStatus() {
+            val index = sortValues.indexOfFirst { it.colName == prefs.sortBy() }.coerceAtLeast(0)
+            binding!!.sortNotesStatus.text = sortLabels[index]
+        }
+        updateSortStatus()
+        binding!!.sortNotes.setOnClickListener {
+            val current = sortValues.indexOfFirst { it.colName == prefs.sortBy() }.coerceAtLeast(0)
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(ghasemi.abbas.note.R.string.sort)
+                .setSingleChoiceItems(sortLabels, current) { dialog, which ->
+                    prefs.setSortBy(sortValues[which].colName)
+                    updateSortStatus()
+                    dialog.dismiss()
+                }.show()
+        }
+        binding!!.pinFavorites.isChecked = prefs.favoritePinnedStatus()
+        binding!!.pinFavorites.setOnCheckedChangeListener { _, checked -> prefs.favoritePinned(checked) }
 
         when (sp!!.getString(THEME_MODE_KEY, ThemeUtil.SYSTEM)) {
             ThemeUtil.SYSTEM -> binding!!.darkModeStatus.text = "سیستم"
@@ -197,16 +229,14 @@ class SettingsFragment : Fragment() {
             }
         }
         
-        binding!!.otherApps.setOnClickListener {
-            try {
-                val intent = Intent(Intent.ACTION_VIEW)
-                intent.data =
-                    Uri.parse(if (BuildConfig.FLAVOR.equals("cafebazaar")) "https://cafebazaar.ir/developer/654337025886" else "https://myket.ir/developer/dev-74572")
-                startActivity(intent)
-            } catch (e: java.lang.Exception) {
-                //
+        val margin = (3 * resources.displayMetrics.density + 0.5f).toInt()
+        binding!!.recommendedAppsContainer.addView(
+            RecommendedAppsView(requireContext(), true),
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = margin
+                bottomMargin = margin
             }
-        }
+        )
 
     }
 
@@ -217,61 +247,64 @@ class SettingsFragment : Fragment() {
     }
 
     private fun backup(output: OutputStream): Boolean {
-        viewModel.closeDatabase()
         val databaseFile = requireContext().getDatabasePath("data")
-        try {
-            val data = FileInputStream(databaseFile)
-            val buffer = ByteArray(1024)
-            var length: Int
-            while (data.read(buffer).also { length = it } > 0) {
-                output.write(buffer, 0, length)
-            }
+        return try {
+            viewModel.openDatabase()
+            viewModel.closeDatabase()
+            FileInputStream(databaseFile).use { it.copyTo(output) }
             output.flush()
-            output.close()
-            data.close()
-            viewModel.openDatabase(requireContext())
-            Snackbar.make(binding!!.root, "پشتیبان گیری با موفقبت انجام شد.", Snackbar.LENGTH_SHORT)
-                .show()
-            return true
+            true
         } catch (e: Exception) {
-            viewModel.openDatabase(requireContext())
-            Log.i(TAG, e.stackTraceToString())
+            Log.e(TAG, "Backup failed", e)
+            false
+        } finally {
+            viewModel.openDatabase()
         }
-        output.flush()
-        output.close()
-        return false
     }
 
-    fun restore(input: InputStream): Boolean {
-        viewModel.closeDatabase()
-        val databaseFile = requireContext().getDatabasePath("data")
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        menu.clear()
+    }
+
+    private fun restore(input: InputStream): Boolean {
+        val context = requireContext().applicationContext
+        val staged = File.createTempFile("notes_restore_", ".db", context.cacheDir)
+        val databaseFile = context.getDatabasePath("data")
+        val previous = File(databaseFile.parentFile, "data.before_restore.${System.nanoTime()}")
         try {
-            databaseFile.delete()
-            val output = FileOutputStream(databaseFile)
-            val buffer = ByteArray(1024)
-            var length: Int
-            while (input.read(buffer).also { length = it } > 0) {
-                output.write(buffer, 0, length)
+            FileOutputStream(staged).use { input.copyTo(it) }
+            if (!validDatabase(staged)) return false
+            viewModel.closeDatabase()
+            if (databaseFile.exists() && !databaseFile.renameTo(previous)) return false
+            try {
+                staged.copyTo(databaseFile, overwrite = true)
+                File(databaseFile.path + "-wal").delete()
+                File(databaseFile.path + "-shm").delete()
+                viewModel.openDatabase()
+                previous.delete()
+                return true
+            } catch (e: Exception) {
+                databaseFile.delete()
+                if (previous.exists()) previous.renameTo(databaseFile)
+                Log.e(TAG, "Restore failed", e)
+                return false
             }
-            output.flush()
-            output.close()
-            input.close()
-            viewModel.openDatabase(requireContext())
-            Snackbar.make(binding!!.root, "بازیابی با موفقبت انجام شد.", Snackbar.LENGTH_SHORT)
-                .show()
-            return true
-        } catch (e: java.lang.Exception) {
-            viewModel.openDatabase(requireContext())
-            Log.i(TAG, e.stackTraceToString())
+        } catch (e: Exception) {
+            Log.e(TAG, "Restore failed", e)
+            return false
+        } finally {
+            staged.delete()
+            viewModel.openDatabase()
         }
-        input.close()
-        return false
     }
 
-    private fun validFile(fileUri: Uri): Boolean {
-        val cr: ContentResolver = requireContext().contentResolver
-        val mime = cr.getType(fileUri)
-        return "application/octet-stream" == mime
+    private fun validDatabase(file: File): Boolean {
+        return try {
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+                db.rawQuery("SELECT id, title, content, favorite, bg_color, archived, last_updated_at, created_at FROM notes LIMIT 0", null).use { }
+                db.version == 1
+            }
+        } catch (_: Exception) { false }
     }
 
 }

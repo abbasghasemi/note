@@ -2,6 +2,7 @@ package ghasemi.abbas.note.ui.add
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
@@ -21,12 +22,14 @@ import ghasemi.abbas.note.R
 import ghasemi.abbas.note.data.Note
 import ghasemi.abbas.note.databinding.FragmentDetailBinding
 import ghasemi.abbas.note.ui.SharedViewModel
+import ghasemi.abbas.note.ui.setupEditorTools
 import ghasemi.abbas.note.ui.notes.NotesFragment
 import ghasemi.abbas.note.utils.HideKeyboard.Companion.hideKeyboard
 import java.util.Locale
 
 @AndroidEntryPoint
 class AddFragment : Fragment(R.layout.fragment_detail) {
+    private var savedNote = false
     private val viewModel: SharedViewModel by viewModels()
     private var _binding: FragmentDetailBinding? = null
     private val binding
@@ -39,17 +42,22 @@ class AddFragment : Fragment(R.layout.fragment_detail) {
         binding!!.apply {
             tvNoteDate.isVisible = false
             background.setBackgroundColor(-1)
+            setupEditorTools()
+            if (savedInstanceState == null) {
+                val draft = requireContext().getSharedPreferences("new_note_draft", Context.MODE_PRIVATE)
+                val draftTitle = draft.getString("title", "").orEmpty()
+                val draftContent = draft.getString("content", "").orEmpty()
+                if (draftTitle.isNotEmpty() || draftContent.isNotEmpty()) {
+                    etAddTitle.setText(draftTitle)
+                    etAddNote.setText(draftContent)
+                    val draftColor = draft.getInt("color", -1)
+                    colorSlider.selectColor(draftColor)
+                    background.setBackgroundColor(draftColor)
+                    Snackbar.make(root, R.string.draft_restored, Snackbar.LENGTH_SHORT).show()
+                }
+            }
             colorSlider.setListener { index, color ->
                 background.setBackgroundColor(color)
-//                if (index in 1..3) {
-//                    binding!!.etAddTitle.setTextColor(Color.WHITE)
-//                    binding!!.etAddNote.setTextColor(Color.WHITE)
-//                    binding!!.tvNoteDate.setTextColor(Color.WHITE)
-//                } else {
-//                    binding!!.etAddTitle.setTextColor(Color.BLACK)
-//                    binding!!.etAddNote.setTextColor(Color.BLACK)
-//                    binding!!.tvNoteDate.setTextColor(Color.BLACK)
-//                }
             }
             fabStt.setOnClickListener { openSTTActivity() }
         }
@@ -83,7 +91,7 @@ class AddFragment : Fragment(R.layout.fragment_detail) {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_save -> addNewNote()
+            R.id.menu_save -> { addNewNote(); return true }
             android.R.id.home -> hideKeyboard()
         }
         return super.onOptionsItemSelected(item)
@@ -94,7 +102,7 @@ class AddFragment : Fragment(R.layout.fragment_detail) {
         val note = binding!!.etAddNote.text.toString()
         val color = binding!!.colorSlider.selectedColor
         Log.d("XO", "$color")
-        if (title.isEmpty() && note.isEmpty()) {
+        if (title.isBlank() && note.isBlank()) {
             Snackbar.make(
                 requireView(),
                 "لطفا عنوان یا شرح یادداشت را پر کنید.",
@@ -103,6 +111,9 @@ class AddFragment : Fragment(R.layout.fragment_detail) {
         } else {
             val newNote = Note(title = title, content = note, bgColor = color)
             viewModel.insertNote(newNote)
+            savedNote = true
+            requireContext().getSharedPreferences("new_note_draft", Context.MODE_PRIVATE)
+                .edit().clear().apply()
             findNavController().popBackStack();
             NotesFragment.snackBar.value = "'$title' ذخیره شد."
         }
@@ -112,5 +123,19 @@ class AddFragment : Fragment(R.layout.fragment_detail) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onPause() {
+        if (!savedNote) {
+            binding?.let { editor ->
+                val title = editor.etAddTitle.text?.toString().orEmpty()
+                val content = editor.etAddNote.text?.toString().orEmpty()
+                val draft = requireContext().getSharedPreferences("new_note_draft", Context.MODE_PRIVATE)
+                if (title.isBlank() && content.isBlank()) draft.edit().clear().apply()
+                else draft.edit().putString("title", title).putString("content", content)
+                    .putInt("color", editor.colorSlider.selectedColor).apply()
+            }
+        }
+        super.onPause()
     }
 }

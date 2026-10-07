@@ -2,18 +2,25 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:fillViewport="true"
+        android:scrollbars="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
         <EditText
             android:id="@+id/et_add_title"
             style="@style/DetailStyle"
             android:hint="@string/title"
             android:importantForAutofill="no"
-            android:text=""
+            android:inputType="textCapSentences"
+            android:maxLines="2"
             android:textColorHint="@color/grey" />
 
         <TextView
@@ -21,15 +28,14 @@
             style="@style/DateTimeStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="14dp"
+            android:textSize="14sp"
             android:textStyle="italic" />
 
         <LinearLayout
             android:id="@+id/linearLayout"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:layout_margin="@dimen/margin_14"
-            android:layout_weight="1"
             android:orientation="horizontal">
 
             <View
@@ -42,21 +48,42 @@
                 android:id="@+id/et_add_note"
                 style="@style/DetailStyle"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_margin="0dp"
                 android:background="@android:color/transparent"
-                android:ems="10"
                 android:gravity="start|top"
                 android:hint="@string/note"
                 android:importantForAutofill="no"
-                android:inputType="textMultiLine"
-                android:maxLines="18"
-                android:minHeight="40dp"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minHeight="320dp"
                 android:paddingStart="@dimen/margin_14"
                 android:paddingEnd="@dimen/margin_14"
                 android:textColorHint="@color/grey"
                 android:textSize="@dimen/large_regular_text" />
 
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/margin_14"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_text_stats"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/empty_text_stats"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_checklist"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/insert_checklist" />
         </LinearLayout>
 
         <LinearLayout
@@ -85,5 +112,6 @@
 
         </LinearLayout>
 
-    </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </layout>

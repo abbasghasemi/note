@@ -22,6 +22,7 @@ import ghasemi.abbas.note.R
 import ghasemi.abbas.note.data.Note
 import ghasemi.abbas.note.databinding.FragmentDetailBinding
 import ghasemi.abbas.note.ui.SharedViewModel
+import ghasemi.abbas.note.ui.setupEditorTools
 import ghasemi.abbas.note.ui.notes.NotesFragment
 import ghasemi.abbas.note.utils.HideKeyboard.Companion.hideKeyboard
 import java.util.*
@@ -40,6 +41,7 @@ class EditFragment : Fragment(R.layout.fragment_detail) {
         _binding = FragmentDetailBinding.bind(view)
 
         binding?.apply {
+            setupEditorTools()
             etAddTitle.setText(args.currentItem.title)
             etAddNote.setText(args.currentItem.content)
             tvNoteDate.text =
@@ -48,15 +50,6 @@ class EditFragment : Fragment(R.layout.fragment_detail) {
             background.setBackgroundColor(args.currentItem.bgColor)
             colorSlider.setListener { index, color ->
                 background.setBackgroundColor(color)
-//                if (index in 1..3) {
-//                    binding!!.etAddTitle.setTextColor(Color.WHITE)
-//                    binding!!.etAddNote.setTextColor(Color.WHITE)
-//                    binding!!.tvNoteDate.setTextColor(Color.WHITE)
-//                } else {
-//                    binding!!.etAddTitle.setTextColor(Color.BLACK)
-//                    binding!!.etAddNote.setTextColor(Color.BLACK)
-//                    binding!!.tvNoteDate.setTextColor(Color.BLACK)
-//                }
             }
             fabStt.setOnClickListener { openSTTActivity() }
         }
@@ -101,8 +94,8 @@ class EditFragment : Fragment(R.layout.fragment_detail) {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_update -> updateNote()
-            R.id.menu_delete -> deleteNote()
+            R.id.menu_update -> { updateNote(); return true }
+            R.id.menu_delete -> { deleteNote(); return true }
             R.id.menu_favorite -> {
                 markAsFavorite()
                 if (args.currentItem.favorite) {
@@ -110,6 +103,18 @@ class EditFragment : Fragment(R.layout.fragment_detail) {
                 } else {
                     item.title = getString(R.string.add_to_favorites)
                 }
+                return true
+            }
+            R.id.menu_share -> {
+                val text = listOf(binding!!.etAddTitle.text.toString(), binding!!.etAddNote.text.toString())
+                    .filter { it.isNotBlank() }.joinToString("\n\n")
+                if (text.isNotBlank()) {
+                    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }, getString(R.string.share_note)))
+                }
+                return true
             }
         }
 
@@ -140,7 +145,7 @@ class EditFragment : Fragment(R.layout.fragment_detail) {
         val title = binding!!.etAddTitle.text.toString()
         val note = binding!!.etAddNote.text.toString()
         val color = binding!!.colorSlider.selectedColor
-        if (title.isEmpty() && note.isEmpty()) {
+        if (title.isBlank() && note.isBlank()) {
             Snackbar.make(
                 requireView(),
                 "لطفا عنوان یا شرح یادداشت را پر کنید.",
@@ -153,7 +158,7 @@ class EditFragment : Fragment(R.layout.fragment_detail) {
                 note,
                 args.currentItem.favorite,
                 color,
-                false,
+                args.currentItem.archived,
                 System.currentTimeMillis(),
                 args.currentItem.createdAt
             )

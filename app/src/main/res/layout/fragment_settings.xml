@@ -93,6 +93,43 @@
                 android:layout_marginVertical="5dp"
                 android:background="@color/colorDivider" />
 
+            <LinearLayout
+                android:id="@+id/sort_notes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="5dp"
+                android:background="?selectableItemBackground"
+                android:minHeight="65dp"
+                android:orientation="vertical"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="10dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sort"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/sort_notes_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/pin_favorites"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginHorizontal="10dp"
+                android:text="@string/pin_favorites" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="5dp"
+                android:background="@color/colorDivider" />
+
             <androidx.appcompat.widget.AppCompatTextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -164,17 +201,11 @@
                 android:text="ثبت نظر"
                 android:textSize="15sp" />
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/other_apps"
+            <LinearLayout
+                android:id="@+id/recommended_apps_container"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="?selectableItemBackground"
-                android:drawableStart="@drawable/round_android_24"
-                android:drawablePadding="10dp"
-                android:gravity="center_vertical"
-                android:paddingHorizontal="10dp"
-                android:text="برنامه های دیگر ما"
-                android:textSize="15sp" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

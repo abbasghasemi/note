@@ -1,4 +1,9 @@
 <resources>
+    <string name="select_note">انتخاب یادداشت</string>
+    <string name="insert_checklist">☐ چک‌لیست</string>
+    <string name="empty_text_stats">۰ واژه · ۰ نویسه</string>
+    <string name="text_stats">%1$d واژه · %2$d نویسه</string>
+    <string name="draft_restored">پیش‌نویس قبلی بازگردانده شد</string>
     <string name="app_name">یادداشت</string>
     <string name="add_new_note">یادداشت جدید</string>
     <string name="favorite_notes">ستاره دار</string>
@@ -18,6 +23,23 @@
     <string name="settings">تنطیمات</string>
     <string name="no_notes">هیچ یادداشتی با جستجویتان مطابقت ندارد</string>
     <string name="speech_to_text_button">الان صحبت کن!</string>
+    <string name="show_recommended_apps">نمایش برنامه‌های دیگر</string>
+    <string name="hide_recommended_apps">بستن برنامه‌های دیگر</string>
+    <string name="other_apps">برنامه‌های پیشنهادی</string>
+    <string name="search_notes_hint">جست‌وجو در عنوان و متن</string>
+    <string name="select_all">انتخاب همه</string>
+    <string name="delete_selected">حذف</string>
+    <string name="cancel">لغو</string>
+    <string name="selected_count">%1$d یادداشت انتخاب شده</string>
+    <string name="delete_selected_confirmation">%1$d یادداشت حذف شود؟</string>
+    <string name="deleted_notes">یادداشت‌ها حذف شدند</string>
+    <string name="undo">بازگردانی</string>
+    <string name="archive">بایگانی</string>
+    <string name="show_notes">یادداشت‌ها</string>
+    <string name="restore_from_archive">بازگردانی از بایگانی</string>
+    <string name="notes_archived">یادداشت‌ها بایگانی شدند</string>
+    <string name="notes_restored">یادداشت‌ها بازگردانده شدند</string>
+    <string name="share_note">اشتراک‌گذاری یادداشت</string>
 
     <string-array name="sortBy">
         <item>عنوان</item>
